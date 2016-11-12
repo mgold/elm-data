@@ -13,12 +13,26 @@ import Http
 
 loadMany : Int -> Store -> Task x StoreUpdate
 loadMany n store =
-    Debug.crash "TODO"
+    let
+        url =
+            Data.baseUrl ++ "/articles?page[size]=" ++ toString n
+    in
+        Time.now
+            |> Task.andThen
+                (\now ->
+                    Http.get url (decodeMany now)
+                        |> Http.toTask
+                        |> Task.map (List.map (uncurry ArticleLoad) >> Batch)
+                        |> Task.onError (ArticleLoadFailure now >> Task.succeed)
+                )
 
 
 getMany : Int -> Store -> List ArticleData
-getMany n store =
-    Debug.crash "TODO"
+getMany n { articles } =
+    articles
+        |> Dict.toList
+        |> List.take n
+        |> List.map (\( id, { data, lastUpdated } ) -> Data id data lastUpdated)
 
 
 load : ID -> Store -> Task x StoreUpdate
@@ -41,18 +55,18 @@ getAuthors ids store =
     Debug.crash "TODO"
 
 
-decode : Time -> Decoder ( ID, Data.InternalArticle )
-decode time =
+decode1 : Time -> Decoder ( ID, Data.InternalArticle )
+decode1 time =
     D.map3 (,,)
-        (D.at [ "data", "id" ] D.string)
-        (D.at [ "data", "attributes" ]
+        (D.field "id" D.string)
+        (D.field "attributes"
             (D.map2
                 ArticleAttributes
                 (D.field "title" D.string)
                 (D.field "body" (D.list D.string))
             )
         )
-        (D.at [ "data", "relationships", "authors" ]
+        (D.at [ "relationships", "authors" ]
             (D.list
                 (D.map2 (,)
                     (D.at [ "data", "id" ] D.string)
@@ -65,6 +79,11 @@ decode time =
             (\( id, attrs, rels ) ->
                 ( id, { data = attrs, relationships = rels, lastUpdated = time } )
             )
+
+
+decodeMany : Time -> Decoder (List ( ID, Data.InternalArticle ))
+decodeMany time =
+    D.field "data" (D.list (decode1 time))
 
 
 

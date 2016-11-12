@@ -5,6 +5,7 @@ module Data exposing (..)
 
 import Dict exposing (Dict)
 import Time exposing (Time)
+import Http
 
 
 baseUrl =
@@ -72,10 +73,9 @@ initialStore =
 
 type StoreUpdate
     = Batch (List StoreUpdate)
-    | NewArticle ID ArticleData
-    | RetrievedArticle Time ID
-    | NewAuthor ID AuthorData
-    | RetrievedAuthor Time ID
+    | ArticleLoad ID InternalArticle
+      -- add more error info later?
+    | ArticleLoadFailure Time Http.Error
 
 
 update : StoreUpdate -> Store -> Store
@@ -84,5 +84,12 @@ update updt store =
         Batch updates ->
             List.foldl update store updates
 
-        _ ->
-            store
+        ArticleLoadFailure time err ->
+            let
+                _ =
+                    Debug.log "Failed to load article(s)" err
+            in
+                { store | errorLog = ( time, toString err ) :: store.errorLog }
+
+        ArticleLoad id internalArticle ->
+            { store | articles = Dict.insert id internalArticle store.articles }

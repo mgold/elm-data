@@ -58,8 +58,14 @@ def json_api_author(author)
   }
 end
 
+before do
+  headers 'Access-Control-Allow-Origin' => '*'
+end
+
 get '/articles' do
-  { data: articles.map { |article| json_api_article(article) } }.to_json
+  limit = (params.dig "page", "size").to_i
+  limit = 50 if limit.zero?
+  { data: articles.first(limit).map { |article| json_api_article(article) } }.to_json
 end
 
 get '/authors' do
