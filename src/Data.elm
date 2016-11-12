@@ -58,6 +58,10 @@ type alias InternalAuthor =
     InternalData AuthorAttributes { articles : List ( ID, URL ) }
 
 
+toExternal ( id, { data, lastUpdated } ) =
+    Data id data lastUpdated
+
+
 type alias Store =
     { articles : Dict ID InternalArticle
     , authors : Dict ID InternalAuthor
@@ -74,6 +78,7 @@ initialStore =
 type StoreUpdate
     = Batch (List StoreUpdate)
     | ArticleLoad ID InternalArticle
+    | ArticleCacheHit Time ID
       -- add more error info later?
     | ArticleLoadFailure Time Http.Error
 
@@ -93,3 +98,6 @@ update updt store =
 
         ArticleLoad id internalArticle ->
             { store | articles = Dict.insert id internalArticle store.articles }
+
+        ArticleCacheHit time id ->
+            store

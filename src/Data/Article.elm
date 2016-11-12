@@ -32,27 +32,47 @@ getMany n { articles } =
     articles
         |> Dict.toList
         |> List.take n
-        |> List.map (\( id, { data, lastUpdated } ) -> Data id data lastUpdated)
+        |> List.map Data.toExternal
 
 
 load : ID -> Store -> Task x StoreUpdate
-load id store =
-    Debug.crash "TODO"
+load id { articles } =
+    let
+        url =
+            Data.baseUrl ++ "/articles/" ++ id
+
+        lookup now =
+            case Dict.get id articles of
+                Just internalArticle ->
+                    Task.succeed <| ArticleCacheHit now id
+
+                Nothing ->
+                    Http.get url (decode1 now)
+                        |> Http.toTask
+                        |> Task.map (uncurry ArticleLoad)
+                        |> Task.onError (ArticleLoadFailure now >> Task.succeed)
+    in
+        Task.andThen lookup Time.now
 
 
 get : ID -> Store -> Maybe ArticleData
-get id store =
-    Debug.crash "TODO"
+get id { articles } =
+    Dict.get id articles
+        |> Maybe.map (\internal -> Data.toExternal ( id, internal ))
 
 
-loadAuthors : List ID -> Store -> Task x StoreUpdate
-loadAuthors ids store =
-    Debug.crash "TODO"
+{-| Get the IDs for each author of article identified by the given ID. These author IDs can be loaded or gotten with the Author module (CURRENTLY NOT IMPLEMENTED).
+
+`Nothing` indicates that ID does not correspond to a known article.
+-}
+authorIds : ID -> Store -> Maybe (List ID)
+authorIds id { articles } =
+    Dict.get id articles
+        |> Maybe.map (.relationships >> .authors >> List.map Tuple.first)
 
 
-getAuthors : List ID -> Store -> List (Result ID AuthorData)
-getAuthors ids store =
-    Debug.crash "TODO"
+
+-- TODO get resources out of included field
 
 
 decode1 : Time -> Decoder ( ID, Data.InternalArticle )
