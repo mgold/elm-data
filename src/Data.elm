@@ -41,6 +41,19 @@ type StoreUpdate
     | NoOp
 
 
+updateStore : StoreUpdate -> Store -> Store
+updateStore update ((S innerStore) as store) =
+    case update of
+        NoOp ->
+            store
+
+        Batch updates ->
+            List.foldl updateStore store updates
+
+        UpdateBook id remoteData ->
+            S { innerStore | books = Dict.insert id remoteData innerStore.books }
+
+
 type alias Book =
     { title : String, author : String, published : Int }
 
@@ -54,7 +67,7 @@ decodeBook =
                 (D.field "author" D.string)
                 (D.field "published" D.int)
     in
-        D.map2 (,) (D.field "id" D.string) (D.field "attributes" attributes)
+        D.field "data" <| D.map2 (,) (D.field "id" D.string) (D.field "attributes" attributes)
 
 
 decode : Decoder StoreUpdate
