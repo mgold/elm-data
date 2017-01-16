@@ -3,58 +3,22 @@ require 'faker'
 require 'json'
 require 'pry'
 
-articles = Array.new(20) do
+books = 20.times.map do |i|
   { title: Faker::Lorem.sentence,
-    body: Faker::Lorem.paragraphs(2),
-    id: Faker::Crypto.md5 }
-end
-
-authors = Array.new(5) do
-  { first_name: Faker::Name.first_name,
-    last_name: Faker::Name.last_name,
-    id: Faker::Crypto.md5,
-    articles: [] }
-end
-
-articles.each do |article|
-  article_authors = authors.sample([1, 1, 1, 2, 3].sample)
-  article[:authors] = article_authors.map do |author|
-    author[:articles] << article[:id]
-    author[:id]
-  end
-end
-
-def json_api_article(article)
-  { type: 'article',
-    id: article[:id],
-    attributes: {
-      title: article[:title],
-      body: article[:body]
-    }, relationships:
-    { authors:
-       article[:authors].map do |author_id|
-         { data: { type: 'author', id: author_id },
-           links: { related: "#{request.host}:#{request.port}/authors/#{author_id}"}
-         }
-       end
-    }
+    author: Faker::Name.name,
+    published: (1920..2017).to_a.sample,
+    id: i+1,
   }
 end
 
-def json_api_author(author)
-  { type: 'author',
-    id: author[:id],
+def json_api_book(book)
+  { type: 'book',
+    id: book[:id].to_s,
     attributes: {
-      firstName: author[:first_name],
-      lastName: author[:last_name]
-    }, relationships:
-    { articles:
-       author[:articles].map do |article_id|
-         { data: { type: 'article', id: article_id },
-           links: { related: "#{request.host}:#{request.port}/articles/#{article_id}"}
-         }
-       end
-    }
+      title: book[:title],
+      author: book[:author],
+      published: book[:published],
+    },
   }
 end
 
@@ -62,29 +26,16 @@ before do
   headers 'Access-Control-Allow-Origin' => '*'
 end
 
-get '/articles' do
+get '/books' do
   limit = (params.dig "page", "size").to_i
   limit = 50 if limit.zero?
-  { data: articles.first(limit).map { |article| json_api_article(article) } }.to_json
+  { data: books.first(limit).map { |book| json_api_book(book) } }.to_json
 end
 
-get '/authors' do
-  { data: authors.map { |author| json_api_author(author) } }.to_json
-end
-
-get '/articles/:id' do
-  article = articles.select{|a| a[:id] = params[:id]}.first
-  if article
-    { data: json_api_article(article) }.to_json
-  else
-    404
-  end
-end
-
-get '/authors/:id' do
-  author = authors.select{|a| a[:id] = params[:id]}.first
-  if author
-    { data: json_api_author(author) }.to_json
+get '/books/:id' do
+  book = books.select{|a| a[:id] = params[:id]}.first
+  if book
+    { data: json_api_book(book) }.to_json
   else
     404
   end

@@ -30,6 +30,11 @@ type Store
     = S { books : Dict ID (RemoteData Error Book) }
 
 
+initialStore : Store
+initialStore =
+    S { books = Dict.empty }
+
+
 type StoreUpdate
     = UpdateBook ID (RemoteData Error Book)
     | Batch (List StoreUpdate)
@@ -37,7 +42,7 @@ type StoreUpdate
 
 
 type alias Book =
-    { name : String, author : String, published : Int }
+    { title : String, author : String, published : Int }
 
 
 decodeBook : Decoder ( ID, Book )
@@ -45,7 +50,7 @@ decodeBook =
     let
         attributes =
             D.map3 Book
-                (D.field "name" D.string)
+                (D.field "title" D.string)
                 (D.field "author" D.string)
                 (D.field "published" D.int)
     in
@@ -67,13 +72,13 @@ decode =
 
 
 encodeBook : ID -> Book -> Json.Value
-encodeBook id { name, author, published } =
+encodeBook id { title, author, published } =
     Json.object
         [ ( "type", Json.string "book" )
         , ( "id", Json.string id )
         , ( "attributes"
           , Json.object
-                [ ( "name", Json.string name )
+                [ ( "title", Json.string title )
                 , ( "author", Json.string author )
                 , ( "published", Json.int published )
                 ]

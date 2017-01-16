@@ -13,4 +13,6 @@
 - [ ] POST
 - [ ] PATCH
 - [ ] DELETE
+- [ ] Access log
+- [ ] Error log
 - [ ] Generate this code
