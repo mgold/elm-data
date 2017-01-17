@@ -22,8 +22,6 @@ type alias URL =
 
 type Error
     = HttpError Http.Error
-    | DecodeError String
-    | IdMismatch
 
 
 type Store
@@ -67,7 +65,36 @@ decodeBook =
                 (D.field "author" D.string)
                 (D.field "published" D.int)
     in
-        D.field "data" <| D.map2 (,) (D.field "id" D.string) (D.field "attributes" attributes)
+        D.map2 (,) (D.field "id" D.string) (D.field "attributes" attributes)
+
+
+expectType : String -> Decoder a -> Decoder a
+expectType tipe decoder =
+    D.at [ "data", "type" ] D.string
+        |> D.andThen
+            (\foundType ->
+                if tipe == foundType then
+                    decoder
+                else
+                    D.fail <| "Expected type " ++ tipe ++ " but got type " ++ foundType
+            )
+
+
+expectID : ID -> Decoder a -> Decoder a
+expectID id decoder =
+    D.at [ "data", "id" ] D.string
+        |> D.andThen
+            (\foundID ->
+                if id == foundID then
+                    D.field "data" decoder
+                else
+                    D.fail <| "Expected ID " ++ id ++ " but got ID " ++ foundID
+            )
+
+
+expectMany : Decoder a -> Decoder (List a)
+expectMany decoder =
+    D.field "data" <| D.list decoder
 
 
 decode : Decoder StoreUpdate

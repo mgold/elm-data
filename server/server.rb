@@ -26,9 +26,13 @@ before do
   headers 'Access-Control-Allow-Origin' => '*'
 end
 
+get '/books/' do
+  redirect to('/books')
+end
+
 get '/books' do
   limit = (params.dig "page", "size").to_i
-  limit = 50 if limit.zero?
+  limit = 10 if limit.zero?
   { data: books.first(limit).map { |book| json_api_book(book) } }.to_json
 end
 

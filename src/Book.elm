@@ -18,24 +18,34 @@ load id (S { books }) =
         RemoteData.NotAsked ->
             Cmd.batch
                 [ UpdateBook id RemoteData.Loading |> Task.succeed |> Task.perform identity
-                , Http.get (url id) decodeBook
+                , Http.get (url id) (decodeBook |> expectID id |> expectType "book")
                     |> Http.toTask
                     |> Task.map
-                        (\( new_id, book ) ->
-                            if new_id == id then
-                                UpdateBook id (RemoteData.Success book)
-                            else
-                                UpdateBook id (RemoteData.Failure IdMismatch)
-                        )
+                        (\( new_id, book ) -> UpdateBook id (RemoteData.Success book))
                     |> Task.onError
-                        (\err ->
-                            Task.succeed <| UpdateBook id (RemoteData.Failure (HttpError err))
-                        )
+                        (\err -> Task.succeed <| UpdateBook id (RemoteData.Failure (HttpError err)))
                     |> Task.perform identity
                 ]
 
         _ ->
             Task.succeed NoOp |> Task.perform identity
+
+
+loadMany : Cmd StoreUpdate
+loadMany =
+    Http.get (url "") (decodeBook |> expectMany)
+        -- TODO check for book type
+        |>
+            Http.toTask
+        |> Task.map
+            (\result ->
+                List.map (\( new_id, book ) -> UpdateBook new_id (RemoteData.Success book)) result |> Batch
+            )
+        |> Task.onError
+            (\err -> Debug.crash (toString err) "")
+        -- TODO: report this somehow
+        |>
+            Task.perform identity
 
 
 get : ID -> Store -> RemoteData Error Book
