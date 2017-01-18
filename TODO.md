@@ -15,4 +15,5 @@
 - [ ] DELETE
 - [ ] Access log
 - [ ] Error log
+- [ ] Rely on links: self: data instead of hard-coded URL patterns
 - [ ] Generate this code
