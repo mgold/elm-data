@@ -37,6 +37,7 @@ get '/books' do
 end
 
 get '/books/:id' do
+  sleep 0.5 # simulate latency so the UI can show the loading state
   book = books.select{|a| a[:id] == params[:id]}.first
   if book
     { data: json_api_book(book) }.to_json
