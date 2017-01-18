@@ -1,7 +1,7 @@
 ## Minimum Viable Demo
-- [ ] Working Book get and load
-- [ ] Server
-- [ ] Web UI that loads books interactively
+- [x] Working Book get and load
+- [x] Server
+- [x] Web UI that loads books interactively
 
 ## Next
 - [ ] Relationships
