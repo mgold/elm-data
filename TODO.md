@@ -17,3 +17,6 @@
 - [ ] Error log
 - [ ] Rely on links: self: data instead of hard-coded URL patterns
 - [ ] Generate this code
+
+## Future
+- [ ] Accommodate non-JSON API APIs
