@@ -111,16 +111,27 @@ decode =
             )
 
 
-encodeBook : ID -> Book -> Json.Value
-encodeBook id { title, author, published } =
-    Json.object
-        [ ( "type", Json.string "book" )
-        , ( "id", Json.string id )
-        , ( "attributes"
-          , Json.object
-                [ ( "title", Json.string title )
-                , ( "author", Json.string author )
-                , ( "published", Json.int published )
-                ]
-          )
-        ]
+encodeBook : Maybe ID -> Book -> Json.Value
+encodeBook mid { title, author, published } =
+    let
+        idList =
+            mid
+                |> Maybe.map (\id -> [ ( "id", Json.string id ) ])
+                |> Maybe.withDefault []
+    in
+        Json.object <|
+            idList
+                ++ [ ( "type", Json.string "book" )
+                   , ( "attributes"
+                     , Json.object
+                        [ ( "title", Json.string title )
+                        , ( "author", Json.string author )
+                        , ( "published", Json.int published )
+                        ]
+                     )
+                   ]
+
+
+inData : Json.Value -> Json.Value
+inData val =
+    Json.object [ ( "data", val ) ]
