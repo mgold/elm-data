@@ -22,6 +22,13 @@ type alias URL =
 
 type Error
     = HttpError Http.Error
+    | Delete DeleteState
+
+
+type DeleteState
+    = Requested
+    | Confirmed
+    | Errored Http.Error
 
 
 type Store

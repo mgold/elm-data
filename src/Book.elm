@@ -41,6 +41,7 @@ loadMany : Cmd StoreUpdate
 loadMany =
     Http.get collectionUrl (decodeBook |> expectMany)
         -- TODO check for book type
+        -- TODO use HTTP.send
         |>
             Http.toTask
         |> Task.map
@@ -70,3 +71,16 @@ post book =
         |> Task.map (\( id, book ) -> ( UpdateBook id (RemoteData.Success book), Ok id ))
         |> Task.onError (\err -> Task.succeed ( NoOp, Err err ))
         |> Task.perform identity
+
+
+delete : ID -> Cmd ( StoreUpdate, Result Http.Error () )
+delete id =
+    Http.request
+        { method = "DELETE"
+        , headers = []
+        , url = url id
+        , body = Http.stringBody ""
+        , expect = Http.expectString
+        , timout = Nothing
+        , withCredentials = False
+        }
