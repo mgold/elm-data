@@ -40,19 +40,17 @@ load id (S { books }) =
 loadMany : Cmd StoreUpdate
 loadMany =
     Http.get collectionUrl (decodeBook |> expectMany)
-        -- TODO check for book type
-        -- TODO use HTTP.send
-        |>
-            Http.toTask
-        |> Task.map
+        |> Http.send
             (\result ->
-                List.map (\( new_id, book ) -> UpdateBook new_id (RemoteData.Success book)) result |> Batch
+                case result of
+                    Err err ->
+                        -- TODO report failures
+                        NoOp
+
+                    Ok result ->
+                        -- TODO check for book type
+                        List.map (\( new_id, book ) -> UpdateBook new_id (RemoteData.Success book)) result |> Batch
             )
-        |> Task.onError
-            (\err -> Debug.crash (toString err) "")
-        -- TODO: report this somehow
-        |>
-            Task.perform identity
 
 
 get : ID -> Store -> RemoteData Error Book
@@ -67,10 +65,15 @@ post book =
         |> inData
         |> Http.jsonBody
         |> flip (Http.post collectionUrl) (decodeBook |> expectType "book" |> Decode.field "data")
-        |> Http.toTask
-        |> Task.map (\( id, book ) -> ( UpdateBook id (RemoteData.Success book), Ok id ))
-        |> Task.onError (\err -> Task.succeed ( NoOp, Err err ))
-        |> Task.perform identity
+        |> Http.send
+            (\result ->
+                case result of
+                    Err err ->
+                        ( NoOp, Err err )
+
+                    Ok ( id, book ) ->
+                        ( UpdateBook id (RemoteData.Success book), Ok id )
+            )
 
 
 delete : ID -> Cmd ( StoreUpdate, Result Http.Error () )
@@ -79,8 +82,17 @@ delete id =
         { method = "DELETE"
         , headers = []
         , url = url id
-        , body = Http.stringBody ""
+        , body = Http.stringBody "" ""
         , expect = Http.expectString
-        , timout = Nothing
+        , timeout = Nothing
         , withCredentials = False
         }
+        |> Http.send
+            (\result ->
+                case result of
+                    Err err ->
+                        ( NoOp, Err err )
+
+                    Ok _ ->
+                        ( NoOp, Ok () )
+            )
